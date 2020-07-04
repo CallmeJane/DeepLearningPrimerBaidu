@@ -3,6 +3,9 @@
 minst_data_analysis.py
 对minst数据集进行数据分析和数据处理和介绍coco模块
 https://github.com/DataXujing/EfficientDet_pytorch(值得学习的入门项目)
+数据显示：
+（1）loss显示
+（2）目标检测显示（将框画出来）
 
 数据分析：
 （1）分析数据集的总大小；每个类别的多少；是否有类别不平衡问题（cls_analysis）
@@ -47,6 +50,30 @@ import yaml
 from PIL import Image
 import matplotlib.pyplot as plt  # plt 用于显示图片
 import matplotlib.image as mpimg  # mpimg 用于读取图片
+#数据显示
+def data_show():
+    path='E:\\temp\\train_dataset_part1\\'
+    img_pth=glob.glob(path+'image/*')
+    for i in img_pth:
+        imgs=glob.glob(i+'/*.jpg')
+        for img in imgs:
+            image = cv2.imread(img)
+            ann_pth=img.replace('image','image_annotation')
+            ann_pth=ann_pth.replace('jpg','json')
+            print(ann_pth)
+            with open(ann_pth,encoding='utf-8') as fa:
+                anns=json.load(fa)
+                annotations=anns['annotations']
+            for ann in annotations:
+                xmin, ymin, xmax, ymax=ann['box']
+                xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
+                #传入矩形的顶点
+                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 0, 255))
+            cv2.imwrite('result.png', image)
+            break
+        break
+    print("生成图片存在已经生成")
+
 # 数据集加载
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -343,8 +370,4 @@ def statistical_img_size(path):
 
 
 if __name__ == '__main__':
-    with open('./gen/train_raw.json',encoding='utf-8') as ft:
-        train=json.load(ft)
-    with open('./gen/val_raw.json',encoding='utf-8') as fv:
-        val=json.load(fv)
-    gen_data_anns('E:\\temp\\train_dataset_part1\\',train,val,'t')
+    data_show()

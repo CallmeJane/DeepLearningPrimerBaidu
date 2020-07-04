@@ -140,11 +140,11 @@ def test_train_pred(coco_model,train_dataloader):
 #模型训练
 for epoch in tqdm(range(configs['epoches'])):
     #train for one epoch, printing every 10 iterations
-    #train_one_epoch(coco_model, optimizer, train_dataloader, device, epoch, print_freq=10)
+    train_one_epoch(coco_model, optimizer, train_dataloader, device, epoch, print_freq=10)
     # #update the learning rate
-    #lr_scheduler.step()
+    lr_scheduler.step()
     #对验证集进行评估
-    evaluate(coco_model, val_dataloader, device=device)
+    evaluate(coco_model, val_dataloader, device=device)     #这里评价的coco数据集
 #保存模型
 state={
     'model':coco_model.state_dict(),
