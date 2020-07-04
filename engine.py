@@ -23,9 +23,35 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
 
         lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
-    for images, targets in metric_logger.log_every(data_loader, print_freq, header):
+    for images, ann in metric_logger.log_every(data_loader, print_freq, header):
+        targets = []
+        for data1 in ann:            #这个for循环可以舍去
+            boxes = []
+            target={}
+            labels=[]
+            for d in data1:
+                box = d['bbox']
+                box = [box[0], box[1], box[0] + box[2], box[1] + box[3]]
+                boxes.append(box)
+                labels.append(d['category_id'])
+                # convert everything into a torch.Tensor
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            # there is only one class
+            labels = torch.as_tensor(labels, dtype=torch.int64)
+            image_id = torch.tensor([data1[0]['image_id']])
+            area = (boxes[:, 2]-boxes[:,0]) * (boxes[:, 3]-boxes[:,1])
+            #print(area)
+            #return
+            iscrowd = torch.zeros((len(data1),), dtype=torch.int64)
+            # suppose all instances are not crowd
+            target["boxes"] = boxes
+            target["labels"] = labels
+            target["image_id"] = image_id
+            target["area"] = area
+            target["iscrowd"] = iscrowd
+            targets.append(target)
         images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets] #假设标签没有放大相应device上？？
 
         loss_dict = model(images, targets)
 
@@ -51,6 +77,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
 
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+        #break
 
     return metric_logger
 
@@ -81,13 +108,41 @@ def evaluate(model, data_loader, device):
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
-    for images, targets in metric_logger.log_every(data_loader, 100, header):
+    for images, anns in metric_logger.log_every(data_loader, 100, header):
+        targets = []
+        for data1 in anns:            #这个for循环可以舍去
+            boxes = []
+            target={}
+            labels=[]
+            for d in data1:
+                box = d['bbox']
+                box = [box[0], box[1], box[0] + box[2], box[1] + box[3]]
+                boxes.append(box)
+                labels.append(d['category_id'])
+                # convert everything into a torch.Tensor
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            # there is only one class
+            labels = torch.as_tensor(labels, dtype=torch.int64)
+            image_id = torch.tensor([data1[0]['image_id']])
+            area = (boxes[:, 2]-boxes[:,0]) * (boxes[:, 3]-boxes[:,1])
+            #print(area)
+            #return
+            iscrowd = torch.zeros((len(data1),), dtype=torch.int64)
+            # suppose all instances are not crowd
+            target["boxes"] = boxes
+            target["labels"] = labels
+            target["image_id"] = image_id
+            target["area"] = area
+            target["iscrowd"] = iscrowd
+            targets.append(target)
         images = list(img.to(device) for img in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        torch.cuda.synchronize()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()     #https://blog.csdn.net/u013548568/article/details/81368019(torch异步)
         model_time = time.time()
         outputs = model(images)
+        print(len(outputs))
 
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
