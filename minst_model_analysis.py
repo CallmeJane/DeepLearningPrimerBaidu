@@ -65,7 +65,10 @@ val_dataloader=DataLoader(val_set,batch_size=configs['batch_size'],shuffle=True,
 #coco_model=models.vgg16(num_classes=23)   #可以配置vgg16的参数个数,只能用来分类
 #https://blog.csdn.net/u013685264/article/details/100564660(faster_rcnn根据自己需要的修改)
 #https://pytorch.org/tutorials/intermediate/quantized_transfer_learning_tutorial.html(torch官网讲解)
-coco_model = models.detection.fasterrcnn_resnet50_fpn(pretrained=True)    #func，加载voc类型数据集
+coco_model = models.detection.fasterrcnn_resnet50_fpn(pretrained=False,pretrained_backbone=False) #func，加载voc类型数据集
+#自己加载faster rcnn
+faster_rcnn_pretrained_model=torch.load('model/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth')
+coco_model.load_state_dict(faster_rcnn_pretrained_model)
 # replace the classifier with a new one, that has num_classes which is user-defined
 num_classes = 24  # 1 class (person) + background
 # get number of input features for the classifier
