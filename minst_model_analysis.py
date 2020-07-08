@@ -33,6 +33,8 @@ from tqdm import tqdm
 from engine import train_one_epoch, evaluate
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
+import matplotlib; matplotlib.use('TkAgg')
 
 def get_parser():
     parser=argparse.ArgumentParser(description='my first detecion model')
@@ -58,7 +60,7 @@ train_set,val_set=torch.utils.data.random_split(coco_dataset,[train_num,val_num]
 
 #collate_fn的作用时将img和img放在一起，ann和ann放在一起
 train_dataloader=DataLoader(train_set,batch_size=configs['batch_size'],shuffle=True,collate_fn=utils.collate_fn)
-val_dataloader=DataLoader(val_set,batch_size=configs['batch_size'],shuffle=True,collate_fn=utils.collate_fn)
+#val_dataloader=DataLoader(val_set,batch_size=configs['batch_size'],shuffle=True,collate_fn=utils.collate_fn)
 
 #模型创建
 #https://blog.csdn.net/u010361236/article/details/90045350
@@ -137,14 +139,20 @@ def test_train_pred(coco_model,train_dataloader):
     predictions = coco_model(x)           # Returns predictions
     print(123)
 #test_train_pred(coco_model,train_dataloader)
+plt.figure(figsize=(4, 6))
 #模型训练
 for epoch in tqdm(range(configs['epoches'])):
     #train for one epoch, printing every 10 iterations
-    train_one_epoch(coco_model, optimizer, train_dataloader, device, epoch, print_freq=10)
+    #画出模型的loss减少过程
+    _,losses=train_one_epoch(coco_model, optimizer, train_dataloader, device, epoch, print_freq=10)
+    print(losses)
+    x=np.linspace(1,len(losses),num=len(losses))
+    plt.plot(x,losses,color='red',linewidth='1')
+    plt.show()
     # #update the learning rate
     lr_scheduler.step()
     #对验证集进行评估
-    evaluate(coco_model, val_dataloader, device=device)     #这里评价的coco数据集
+    #evaluate(coco_model, val_dataloader, device=device)     #这里评价的coco数据集
 #保存模型
 state={
     'model':coco_model.state_dict(),
