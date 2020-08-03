@@ -13,9 +13,9 @@ learning_rate=0.01
 epoches=20
 
 # 5:1:1
-train_db=datasets.MNIST('data',train=True,download=False,transform=transforms.Compose([transforms.ToTensor()]))
+train_db=datasets.MNIST('../data',train=True,download=False,transform=transforms.Compose([transforms.ToTensor()]))
 train_db,validation_db=torch.utils.data.random_split(train_db,[50000,10000])
-test_db=datasets.MNIST('data',train=False,download=False,transform=transforms.Compose([transforms.ToTensor()]))
+test_db=datasets.MNIST('../data',train=False,download=False,transform=transforms.Compose([transforms.ToTensor()]))
 #训练和验证是交叉进行的（若是有验证的情况下）
 train_loader=DataLoader(train_db,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_db,batch_size=batch_size,shuffle=True)

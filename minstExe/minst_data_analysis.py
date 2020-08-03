@@ -16,6 +16,8 @@ https://github.com/DataXujing/EfficientDet_pytorch(值得学习的入门项目)
 （2）分别生成训练集和验证集的标注，为数据加载和训练模型做准备（gen_data_anns）
 （3）构造自己的数据加载集，
 
+数据增强：
+
 COCO数据集分类：
 共有物体检测 (Detection)、
 人体关键点检测 (Keypoints)、
@@ -50,29 +52,32 @@ import yaml
 from PIL import Image
 import matplotlib.pyplot as plt  # plt 用于显示图片
 import matplotlib.image as mpimg  # mpimg 用于读取图片
-#数据显示
+
+
+# 数据显示
 def data_show():
-    path='E:\\temp\\train_dataset_part1\\'
-    img_pth=glob.glob(path+'image/*')
+    path = 'E:\\temp\\train_dataset_part1\\'
+    img_pth = glob.glob(path + 'image/*')
     for i in img_pth:
-        imgs=glob.glob(i+'/*.jpg')
+        imgs = glob.glob(i + '/*.jpg')
         for img in imgs:
             image = cv2.imread(img)
-            ann_pth=img.replace('image','image_annotation')
-            ann_pth=ann_pth.replace('jpg','json')
+            ann_pth = img.replace('image', 'image_annotation')
+            ann_pth = ann_pth.replace('jpg', 'json')
             print(ann_pth)
-            with open(ann_pth,encoding='utf-8') as fa:
-                anns=json.load(fa)
-                annotations=anns['annotations']
+            with open(ann_pth, encoding='utf-8') as fa:
+                anns = json.load(fa)
+                annotations = anns['annotations']
             for ann in annotations:
-                xmin, ymin, xmax, ymax=ann['box']
+                xmin, ymin, xmax, ymax = ann['box']
                 xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
-                #传入矩形的顶点
+                # 传入矩形的顶点
                 cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 0, 255))
             cv2.imwrite('result.png', image)
             break
         break
     print("生成图片存在已经生成")
+
 
 # 数据集加载
 import torch
@@ -82,8 +87,8 @@ import torchvision.transforms as transforms
 
 # print('[Epoch:%d, Iter(img):%d, Pos_pair_num:%d, Neg_pair_num:%d] loss: %.4f, time(s): %d' %
 #       (epoch + 1, i, pos_pair_num, neg_pair_num, running_loss / (pos_pair_num + neg_pair_num), end_time - start_time))
-train_path = './data/MNIST/train/'
-test_path = './data/MNIST/test/'
+train_path = '../data/MNIST/train/'
+test_path = '../data/MNIST/test/'
 
 
 def save_json(images, annotations, save_path):
@@ -217,13 +222,13 @@ def split_trainval_to_train_val(path, ratio, mode='class'):
             cls_train, cls_val = torch.utils.data.random_split(imgs_name, [len_train, len_val])
             train.extend(cls_train)
             val.extend(cls_val)
-    json.dump(train, open('./gen/train_raw.json', encoding='utf-8', mode='w'))
-    json.dump(val, open('./gen/val_raw.json', encoding='utf-8', mode='w'))
+    json.dump(train, open('../gen/train_raw.json', encoding='utf-8', mode='w'))
+    json.dump(val, open('../gen/val_raw.json', encoding='utf-8', mode='w'))
     return train, val
 
 
 # 生成数据集标签,coco类型，images,annotations,先调用split_trainval_to_train_val生成train_raw,val_raw
-def gen_data_anns(path, train_pth, val_pth, mode='class',bbox_mode='coco'):  #coco和voc生成的标签不一样
+def gen_data_anns(path, train_pth, val_pth, mode='class', bbox_mode='coco'):  # coco和voc生成的标签不一样
     if mode == 'class':
         anns_train = []  # file_name,lable
         anns_val = []
@@ -274,7 +279,7 @@ def gen_data_anns(path, train_pth, val_pth, mode='class',bbox_mode='coco'):  #co
                     anns.append({
                         'id': ann_id,  # 一定要是按照序列的
                         'image_id': img_id,
-                        'bbox': [xmin, ymin, box_w, box_h],   #对bbox的处理要注意，不同地方处理不同
+                        'bbox': [xmin, ymin, box_w, box_h],  # 对bbox的处理要注意，不同地方处理不同
                         'category_id': cls_id,
                         'instance_id': instance_id,
                         'segmentation': [],
@@ -286,43 +291,44 @@ def gen_data_anns(path, train_pth, val_pth, mode='class',bbox_mode='coco'):  #co
                 if img_id > 50:
                     break
             if index == 0:
-                save_json(imgs, anns, './gen/train_instance.json')
+                save_json(imgs, anns, '../gen/train_instance.json')
             else:
-                save_json(imgs, anns, './gen/val_instance.json')
+                save_json(imgs, anns, '../gen/val_instance.json')
         del imgs
         del anns
 
 
-# 数据加载
+# 数据加载+数据增强
 def coco_dataset():
-    configs = yaml.safe_load(open('./config/coco.yml').read())
-    train_augmentation = transforms.Compose([#transforms.RandomResizedCrop(800),#随机对图像进行裁剪，图像的标签会变化
-                                             #transforms.Resize(800),  #只会根据短边修改到800，长边会变长
-                                             transforms.RandomCrop(800,padding=1,pad_if_needed=True),#不够800填充黑色
-                                             transforms.RandomHorizontalFlip(0.5),
-                                             transforms.RandomVerticalFlip(0.5),
-                                             transforms.ToTensor(),
-                                             transforms.Normalize(configs['mean'], configs['std'])])
+    configs = yaml.safe_load(open('../config/coco.yml').read())
+    train_augmentation = transforms.Compose([  # transforms.RandomResizedCrop(800),#随机对图像进行裁剪，图像的标签会变化
+        # transforms.Resize(800),  #只会根据短边修改到800，长边会变长
+        transforms.RandomCrop(800, padding=1, pad_if_needed=True),  # 不够800填充黑色
+        transforms.RandomHorizontalFlip(0.5),
+        transforms.RandomVerticalFlip(0.5),
+        transforms.ToTensor(),
+        transforms.Normalize(configs['mean'], configs['std'])])
     cap = det.CocoDetection(root='E:\\temp\\train_dataset_part1\\',
-                            annFile='./gen/val_instance.json',
+                            annFile='../gen/val_instance.json',
                             transform=train_augmentation)  # 注意没有s
     print('Number of sampler {}'.format(len(cap)))
     for each in cap:
         img, target = each  ## load 4th sample
-        #print(img.size())  # 转化后图像
-        #print(target)  # 标注,图像改变了大小，但是标注却没有？？？（不是学错了）
+        # print(img.size())  # 转化后图像
+        # print(target)  # 标注,图像改变了大小，但是标注却没有？？？（不是学错了）
     train_db, val_db = torch.utils.data.random_split(cap, [7, 3])  # 使用该方法会按照类别分类（放心使用）
     train_loader = DataLoader(train_db, batch_size=5, shuffle=True)
     val_loader = DataLoader(val_db, batch_size=1, shuffle=True)
     for batch_index, data in enumerate(train_loader):
-        #data[0]存储的是原始img数据，len(data[0])=batch_size
-        #data[1]存储时原始标注信息
-        print(batch_index, len(data[0]),len(data[1]))
+        # data[0]存储的是原始img数据，len(data[0])=batch_size
+        # data[1]存储时原始标注信息
+        print(batch_index, len(data[0]), len(data[1]))
         print(len(data[1]))
 
         break
     # for batch_index,data in enumerate(val_loader):
     #     print(batch_index,data)
+
 
 class MyData(Dataset):
     '''https://blog.csdn.net/yizhishuixiong/article/details/105224710(加载自己的数据集)'''

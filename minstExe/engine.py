@@ -5,8 +5,9 @@ import torch
 
 import torchvision.models.detection.mask_rcnn
 
-from coco_utils import get_coco_api_from_dataset
-from coco_eval import CocoEvaluator
+from minstExe.coco_utils import get_coco_api_from_dataset
+from minstExe.coco_eval import CocoEvaluator
+#from minst import utils
 import utils
 
 
@@ -81,8 +82,6 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         #break
 
     return metric_logger,loss_plt
-
-
 def _get_iou_types(model):
     model_without_ddp = model
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
